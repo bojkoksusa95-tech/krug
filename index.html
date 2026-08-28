@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Круг — книга новых знакомств</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2ECDD;
+    --paper-card:#FBF7EF;
+    --ink:#2A2118;
+    --ink-soft:#7C6C56;
+    --ink-faint:#A79878;
+    --line:#DECFA8;
+    --line-soft:#E9DFC3;
+    --stage-new:#5B7C99;
+    --stage-chat:#3F8A7A;
+    --stage-plan:#C68A2E;
+    --stage-friend:#B33F32;
+    --danger:#B33F32;
+    --shadow: 0 3px 14px rgba(42,33,24,.13);
+    --shadow-lg: 0 12px 40px rgba(42,33,24,.28);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 12% 8%, rgba(255,255,255,.35), transparent 40%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background: var(--stage-plan); color:#fff; }
+  a{ color: inherit; }
+  button{ font-family:inherit; cursor:pointer; }
+  input, textarea, select{ font-family:inherit; }
+  :focus-visible{ outline: 2.5px solid var(--stage-plan); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.68rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+
+  .shell{ max-width:1080px; margin:0 auto; padding:32px 20px 80px; }
+
+  /* ---------- header ---------- */
+  header.top{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; flex-wrap:wrap; margin-bottom:22px;
+  }
+  header.top h1{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:2.6rem;
+    margin:2px 0 0;
+    line-height:1;
+  }
+  header.top .tagline{ margin-top:6px; color:var(--ink-soft); font-size:.92rem; max-width:34ch; }
+
+  .stats-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat-chip{
+    background:var(--paper-card); border:1px solid var(--line);
+    border-radius:999px; padding:7px 14px;
+    font-family:'IBM Plex Mono', monospace; font-size:.72rem;
+    display:flex; align-items:center; gap:7px; color:var(--ink-soft);
+    box-shadow: var(--shadow);
+  }
+  .stat-chip b{ color:var(--ink); font-size:.9rem; font-family:'Work Sans',sans-serif; font-weight:700; }
+
+  /* ---------- nudge panel ---------- */
+  .nudge{
+    margin:22px 0; padding:16px 18px; border-radius:var(--radius);
+    background:linear-gradient(135deg, #FBF3E4, #F6EBD3);
+    border:1px dashed var(--stage-plan);
+  }
+  .nudge-head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .nudge-head .dot{ width:8px; height:8px; border-radius:50%; background:var(--stage-plan); }
+  .nudge-head span{ font-family:'IBM Plex Mono', monospace; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:#8A5E17; }
+  .nudge-list{ display:flex; flex-direction:column; gap:8px; }
+  .nudge-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:rgba(255,255,255,.55); border-radius:var(--radius-sm); padding:9px 12px;
+  }
+  .nudge-item .who{ display:flex; flex-direction:column; }
+  .nudge-item .who b{ font-family:'Fraunces', serif; font-weight:600; font-size:1.02rem; cursor:pointer; }
+  .nudge-item .who small{ color:#8A5E17; font-size:.76rem; }
+  .nudge-item button{
+    background:var(--ink); color:#fff; border:none; border-radius:999px;
+    padding:6px 12px; font-size:.76rem; font-weight:600; white-space:nowrap;
+  }
+  .nudge-item button:hover{ background:var(--stage-friend); }
+  .nudge-empty{ color:#8A5E17; font-size:.85rem; }
+  .nudge-sub{ font-size:.72rem; color:#8A5E17; margin:-2px 0 12px; opacity:.8; line-height:1.4; }
+  .nudge-item.gentle{ background:rgba(255,255,255,.32); }
+  .suggest-row{ display:flex; align-items:flex-start; gap:6px; margin-top:5px; }
+  .suggest-row .stext{ font-size:.74rem; color:var(--ink-soft); font-style:italic; flex:1; line-height:1.35; }
+  .icon-mini{ background:none; border:none; color:var(--ink-faint); padding:3px; border-radius:5px; display:flex; align-items:center; flex-shrink:0; }
+  .icon-mini:hover{ color:var(--ink); background:var(--line-soft); }
+  .icon-mini.copied{ color:var(--stage-chat); }
+
+  .cadence-box{ background:#FBF3E4; border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px; margin-top:12px; font-size:.8rem; color:var(--ink-soft); line-height:1.45; }
+  .cadence-box b{ color:var(--ink); }
+  .suggest-head{ display:flex; align-items:center; justify-content:space-between; margin-top:16px; margin-bottom:8px; }
+  .suggest-head button{ background:none; border:none; color:var(--stage-chat); font-size:.76rem; font-weight:600; display:flex; align-items:center; gap:4px; }
+  .suggest-panel{ display:flex; flex-direction:column; gap:8px; }
+  .suggest-card{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-sm); padding:9px 11px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .suggest-card .stext{ font-size:.85rem; color:var(--ink); line-height:1.4; }
+  .suggest-card .icon-mini{ margin-top:1px; }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{ display:flex; gap:10px; align-items:center; margin:18px 0 14px; flex-wrap:wrap; }
+  .search-wrap{
+    flex:1; min-width:220px; position:relative;
+  }
+  .search-wrap svg{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.5; }
+  #searchInput{
+    width:100%; padding:11px 14px 11px 38px; border-radius:999px;
+    border:1px solid var(--line); background:var(--paper-card); color:var(--ink);
+    font-size:.92rem;
+  }
+  #searchInput::placeholder{ color:var(--ink-faint); }
+  #addBtn{
+    display:flex; align-items:center; gap:6px;
+    background:var(--stage-friend); color:#fff; border:none;
+    border-radius:999px; padding:11px 18px; font-weight:600; font-size:.9rem;
+    box-shadow: var(--shadow);
+  }
+  #addBtn:hover{ filter:brightness(1.08); }
+  #exportBtn{
+    display:flex; align-items:center; gap:6px;
+    background:var(--paper-card); color:var(--ink); border:1px solid var(--line);
+    border-radius:999px; padding:11px 16px; font-weight:600; font-size:.85rem;
+  }
+  #exportBtn:hover{ background:var(--line-soft); }
+  .export-pre{
+    width:100%; max-height:320px; overflow-y:auto; background:#fff; border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:14px; font-family:'IBM Plex Mono',monospace; font-size:.78rem;
+    white-space:pre-wrap; line-height:1.5; color:var(--ink); margin-top:6px;
+  }
+  .export-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .copy-note{ font-size:.76rem; color:var(--stage-chat); margin-top:8px; min-height:1em; }
+
+  /* ---------- tabs ---------- */
+  .tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+  .tab-btn{
+    border:1px solid var(--line); background:var(--paper-card);
+    border-radius:999px; padding:7px 13px; font-size:.8rem; color:var(--ink-soft);
+    display:flex; align-items:center; gap:6px; font-weight:500;
+    border-bottom:3px solid transparent;
+  }
+  .tab-btn .sw{ width:8px; height:8px; border-radius:50%; }
+  .tab-btn.active{ color:var(--ink); border-bottom-color: var(--tab-color, var(--ink)); background:#fff; font-weight:600; }
+
+  /* ---------- grid ---------- */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(258px, 1fr)); gap:16px; }
+
+  .card{
+    background:var(--paper-card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:16px 16px 14px; display:flex; flex-direction:column; gap:9px;
+    cursor:pointer; position:relative;
+  }
+  .card:hover{ box-shadow:0 8px 24px rgba(42,33,24,.18); transform:translateY(-1px); transition:.15s ease; }
+  .stage-chip{
+    align-self:flex-start; font-family:'IBM Plex Mono', monospace; font-size:.62rem;
+    letter-spacing:.08em; text-transform:uppercase; color:#fff;
+    padding:3px 9px; border-radius:999px; background:var(--c, var(--ink));
+  }
+  .card h3{ font-family:'Fraunces', serif; font-style:italic; font-weight:600; margin:0; font-size:1.28rem; line-height:1.15; }
+  .card .where{ color:var(--ink-soft); font-size:.83rem; font-style:italic; margin-top:-4px; }
+  .card .tags{ display:flex; gap:5px; flex-wrap:wrap; }
+  .card .tag{ font-size:.68rem; border:1px solid var(--line); border-radius:999px; padding:2px 8px; color:var(--ink-soft); }
+  .card .note-preview{ font-size:.82rem; color:var(--ink-soft); line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:0; }
+  .card .footer{ display:flex; align-items:center; justify-content:space-between; margin-top:4px; border-top:1px solid var(--line-soft); padding-top:9px; }
+  .card .last{ font-family:'IBM Plex Mono', monospace; font-size:.68rem; color:var(--ink-faint); }
+  .card .last.overdue{ color:var(--danger); font-weight:600; }
+  .card .quick-btn{
+    border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 10px;
+    font-size:.72rem; font-weight:600; color:var(--stage-chat); display:flex; align-items:center; gap:4px;
+  }
+  .card .quick-btn:hover{ background:var(--stage-chat); color:#fff; border-color:var(--stage-chat); }
+
+  .empty-state{
+    grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--ink-soft);
+  }
+  .empty-state .big{ font-family:'Fraunces',serif; font-style:italic; font-size:1.5rem; color:var(--ink); margin-bottom:6px; }
+  .empty-state button{
+    margin-top:14px; background:var(--ink); color:#fff; border:none; border-radius:999px;
+    padding:10px 20px; font-weight:600; font-size:.85rem;
+  }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(30,24,16,.45); backdrop-filter:blur(2px);
+    display:flex; align-items:flex-start; justify-content:center; padding:5vh 16px; z-index:50; overflow-y:auto;
+  }
+  .modal{
+    background:var(--paper-card); border-radius:var(--radius); width:100%; max-width:520px;
+    box-shadow:var(--shadow-lg); padding:24px 24px 22px; position:relative; border:1px solid var(--line);
+  }
+  .modal-close{
+    position:absolute; top:14px; right:14px; background:none; border:none; color:var(--ink-soft);
+    width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  }
+  .modal-close:hover{ background:var(--line-soft); }
+  .modal h2{ font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size:1.55rem; margin:0 0 4px; padding-right:30px; }
+  .field-row{ display:flex; gap:10px; }
+  .field-row > *{ flex:1; }
+  .form-group{ margin-top:14px; }
+  .form-group label{ display:block; font-family:'IBM Plex Mono',monospace; font-size:.66rem; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:5px; }
+  .form-group input, .form-group textarea{
+    width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--line);
+    background:#fff; color:var(--ink); font-size:.92rem; resize:vertical;
+  }
+  .stage-picker{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .stage-opt{
+    border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:7px 12px;
+    font-size:.78rem; color:var(--ink-soft); font-weight:500;
+  }
+  .stage-opt.sel{ background:var(--c); border-color:var(--c); color:#fff; font-weight:600; }
+  .modal-actions{ display:flex; gap:10px; margin-top:20px; }
+  .btn-primary{ background:var(--stage-friend); color:#fff; border:none; border-radius:999px; padding:11px 18px; font-weight:600; font-size:.88rem; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-ghost{ background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:999px; padding:11px 16px; font-size:.85rem; }
+  .btn-ghost:hover{ background:var(--line-soft); }
+  .btn-danger-text{ background:none; border:none; color:var(--danger); font-size:.8rem; text-decoration:underline; padding:6px 0; }
+  .confirm-row{ display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .confirm-row span{ font-size:.8rem; color:var(--ink-soft); }
+  .confirm-row button{ font-size:.76rem; border-radius:999px; padding:5px 10px; border:1px solid var(--line); background:#fff; }
+  .confirm-row .yes{ background:var(--danger); color:#fff; border-color:var(--danger); }
+
+  hr.split{ border:none; border-top:1px solid var(--line-soft); margin:20px 0; }
+  .notes-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .notes-head .eyebrow{ margin:0; }
+  .add-note-row{ display:flex; flex-direction:column; gap:8px; }
+  .checkbox-row{ display:flex; align-items:center; gap:7px; font-size:.78rem; color:var(--ink-soft); }
+  .timeline{ display:flex; flex-direction:column; gap:10px; margin-top:14px; max-height:220px; overflow-y:auto; padding-right:4px; }
+  .timeline-item{ display:flex; gap:10px; }
+  .timeline-item .tdate{ font-family:'IBM Plex Mono',monospace; font-size:.66rem; color:var(--ink-faint); white-space:nowrap; padding-top:2px; }
+  .timeline-item .ttext{ font-size:.87rem; color:var(--ink); line-height:1.4; }
+  .timeline-empty{ font-size:.82rem; color:var(--ink-faint); font-style:italic; }
+
+  .loading-screen{ text-align:center; padding:100px 20px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; font-size:.8rem; letter-spacing:.06em; }
+
+  @media (max-width:560px){
+    header.top h1{ font-size:2.1rem; }
+    .modal{ padding:20px 16px; }
+    .field-row{ flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="shell" id="app">
+  <div class="loading-screen">Открываю книгу…</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "krug-contacts-v1";
+  const hasClaudeStorage = (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+  const STAGES = [
+    { id:"new",    label:"Новое знакомство",  color:"var(--stage-new)",    hex:"#5B7C99" },
+    { id:"chat",   label:"Переписываемся",    color:"var(--stage-chat)",   hex:"#3F8A7A" },
+    { id:"plan",   label:"Планируем встречу", color:"var(--stage-plan)",   hex:"#C68A2E" },
+    { id:"friend", label:"Друзья",            color:"var(--stage-friend)", hex:"#B33F32" }
+  ];
+  const stageById = id => STAGES.find(s => s.id === id) || STAGES[0];
+
+  const ICONS = {
+    search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    plus: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    close: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+    check: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    download: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    refresh: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>`,
+    copy: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
+  };
+
+  // Cadence: how many days to wait before nudging again, by stage — designed to feel present
+  // right after meeting, then space out so it never feels needy.
+  const CHAT_STEPS = [10, 14, 21, 30]; // 1.5 нед → 2 нед → 3 нед → раз в месяц
+
+  // Message-idea bank per stage. {whereMet} and {tag} are filled in automatically when known.
+  const QUESTION_BANK = {
+    new: [
+      { t:"Было классно познакомиться{whereMetSuffix}! Как сама, всё хорошо?", needs:[] },
+      { t:"Привет! Помню, ты говорила про {tag} — было очень интересно послушать.", needs:['tag'] },
+      { t:"Привет, это [твоё имя] — рада знакомству{whereMetSuffix}. Как прошли последние дни?", needs:[] },
+      { t:"Привет! Как тебе {whereMet}, часто там бываешь?", needs:['whereMet'] }
+    ],
+    chat: [
+      { t:"Как проходит неделя, было что-нибудь интересное?", needs:[] },
+      { t:"Ты рассказывала про {tag} — как продвигается?", needs:['tag'] },
+      { t:"Что сейчас занимает мысли — работа, планы, что-то ещё?", needs:[] },
+      { t:"Какая последняя классная вещь, которую посмотрела или прочитала?", needs:[] },
+      { t:"Есть планы на выходные?", needs:[] },
+      { t:"Как твои дела вообще — что нового с последнего раза?", needs:[] }
+    ],
+    plan: [
+      { t:"Когда тебе удобно встретиться на этой неделе?", needs:[] },
+      { t:"Куда бы хотелось сходить — кофе, прогулка, что-то ещё?", needs:[] },
+      { t:"Что по еде и напиткам любишь — подберу место.", needs:[] },
+      { t:"Есть места, куда давно хотела сходить? Можем вместе.", needs:[] }
+    ],
+    friend: [
+      { t:"Как дела вообще, что нового в жизни?", needs:[] },
+      { t:"Что было самым ярким за последний месяц?", needs:[] },
+      { t:"Когда встретимся в следующий раз — есть идеи?", needs:[] },
+      { t:"Что сейчас занимает мысли или заботит?", needs:[] },
+      { t:"Есть повод собраться — как насчёт {tag}?", needs:['tag'] }
+    ]
+  };
+  function fillTemplate(tpl, p){
+    const tag = p.tags && p.tags.length ? p.tags[Math.floor(Math.random()*p.tags.length)] : null;
+    if(tpl.needs.includes('tag') && !tag) return null;
+    if(tpl.needs.includes('whereMet') && !p.whereMet) return null;
+    return tpl.t
+      .replace('{whereMetSuffix}', p.whereMet ? ` на ${p.whereMet}` : '')
+      .replace('{whereMet}', p.whereMet || '')
+      .replace('{tag}', tag || '');
+  }
+  function candidateMessages(p){
+    const bank = QUESTION_BANK[p.stage] || QUESTION_BANK.chat;
+    return bank.map(tpl=>fillTemplate(tpl, p)).filter(Boolean);
+  }
+  const nudgeSuggestionCache = {};   // id -> current suggestion string (in-memory, resets on reload)
+  const profileSuggestionCache = {}; // id -> array of current suggestion strings
+  function pickSuggestion(p, cache, forceNew){
+    const list = candidateMessages(p);
+    if(!list.length) return null;
+    if(!forceNew && cache[p.id]) return cache[p.id];
+    cache[p.id] = list[Math.floor(Math.random()*list.length)];
+    return cache[p.id];
+  }
+  function pickSuggestions(p, n, cache, forceNew){
+    const list = candidateMessages(p);
+    if(!list.length) return [];
+    if(!forceNew && cache[p.id]) return cache[p.id];
+    const shuffled = [...list].sort(()=>Math.random()-0.5);
+    cache[p.id] = shuffled.slice(0, Math.min(n, shuffled.length));
+    return cache[p.id];
+  }
+
+  let people = [];
+  let filterStage = "all";
+  let searchQuery = "";
+  let modalState = null; // {type:'add'} | {type:'profile', id} | {type:'delete-confirm', id} inside profile
+  let dataReady = false;
+
+  // ---------- storage ----------
+  // Works two ways: inside Claude.ai artifacts it uses window.storage (per-user, synced);
+  // hosted as a plain website (Netlify, GitHub Pages, etc.) it falls back to the browser's
+  // own localStorage, so contacts still save on that device/browser.
+  async function loadData(){
+    if(hasClaudeStorage){
+      try{
+        const res = await window.storage.get(STORAGE_KEY, false);
+        people = res && res.value ? JSON.parse(res.value) : [];
+      }catch(e){
+        people = [];
+      }
+    } else {
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        people = raw ? JSON.parse(raw) : [];
+      }catch(e){
+        people = [];
+      }
+    }
+    dataReady = true;
+    // migrate older records that don't have contactCount yet
+    people.forEach(p=>{
+      if(typeof p.contactCount !== 'number') p.contactCount = p.lastContact ? 1 : 0;
+    });
+  }
+  async function saveData(){
+    if(hasClaudeStorage){
+      try{
+        await window.storage.set(STORAGE_KEY, JSON.stringify(people), false);
+      }catch(e){
+        console.error("Не удалось сохранить данные", e);
+      }
+    } else {
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(people));
+      }catch(e){
+        console.error("Не удалось сохранить данные", e);
+      }
+    }
+  }
+
+  // ---------- helpers ----------
+  function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  function todayISO(){ return new Date().toISOString(); }
+  function fmtDate(iso){
+    if(!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'});
+  }
+  function daysSince(iso){
+    if(!iso) return null;
+    const ms = Date.now() - new Date(iso).getTime();
+    return Math.floor(ms / 86400000);
+  }
+  function escapeHtml(str){
+    return String(str||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function parseTags(str){
+    return String(str||"").split(",").map(t=>t.trim()).filter(Boolean).slice(0,8);
+  }
+  function chatCadenceDays(count){
+    const idx = Math.min(Math.max((count||0)-1, 0), CHAT_STEPS.length-1);
+    return CHAT_STEPS[idx];
+  }
+  function getCadenceInfo(p){
+    let days, gentle=false;
+    if(p.stage === 'new'){
+      days = p.lastContact ? 3 : 2;
+    } else if(p.stage === 'plan'){
+      days = 3;
+    } else if(p.stage === 'friend'){
+      days = 30; gentle = true;
+    } else { // 'chat'
+      days = chatCadenceDays(p.contactCount);
+    }
+    const base = p.lastContact || p.createdAt;
+    const nextDate = new Date(new Date(base).getTime() + days*86400000);
+    return { days, gentle, nextDate, firstEver: !p.lastContact };
+  }
+  function needsNudge(p){
+    const info = getCadenceInfo(p);
+    if(Date.now() < info.nextDate.getTime()) return null;
+    const overdueDays = Math.floor((Date.now() - info.nextDate.getTime())/86400000);
+    let reason;
+    if(info.firstEver){
+      const d = daysSince(p.createdAt);
+      reason = `познакомились ${d} ${plural(d,'день','дня','дней')} назад — время написать первой`;
+    } else {
+      const d = daysSince(p.lastContact);
+      reason = `не общались ${d} ${plural(d,'день','дня','дней')} (обычно на этом этапе — раз в ~${info.days} дн.)`;
+    }
+    return { reason, priority: (info.gentle ? overdueDays : overdueDays + 500), gentle: info.gentle, cadenceDays: info.days };
+  }
+  function plural(n, one, few, many){
+    n = Math.abs(n) % 100;
+    const n1 = n % 10;
+    if(n>10 && n<20) return many;
+    if(n1>1 && n1<5) return few;
+    if(n1===1) return one;
+    return many;
+  }
+
+  // ---------- mutations ----------
+  function addPerson(data){
+    const p = {
+      id: uid(),
+      name: data.name.trim(),
+      whereMet: data.whereMet.trim(),
+      contact: data.contact.trim(),
+      tags: parseTags(data.tags),
+      stage: 'new',
+      notes: data.firstNote && data.firstNote.trim() ? [{id:uid(), date: todayISO(), text: data.firstNote.trim()}] : [],
+      createdAt: todayISO(),
+      lastContact: null,
+      contactCount: 0
+    };
+    people.unshift(p);
+    saveData();
+  }
+  function updatePerson(id, patch){
+    const p = people.find(x=>x.id===id);
+    if(!p) return;
+    Object.assign(p, patch);
+    saveData();
+  }
+  function deletePerson(id){
+    people = people.filter(x=>x.id!==id);
+    saveData();
+  }
+  function addNote(id, text, countsAsContact){
+    const p = people.find(x=>x.id===id);
+    if(!p || !text.trim()) return;
+    p.notes.unshift({id:uid(), date: todayISO(), text: text.trim()});
+    if(countsAsContact){ p.lastContact = todayISO(); p.contactCount = (p.contactCount||0) + 1; }
+    saveData();
+  }
+  function markContactedToday(id){
+    const p = people.find(x=>x.id===id);
+    if(!p) return;
+    p.lastContact = todayISO();
+    p.contactCount = (p.contactCount||0) + 1;
+    if(p.stage === 'new') p.stage = 'chat';
+    p.notes.unshift({id:uid(), date: todayISO(), text:"Отметка: написала / вышли на связь"});
+    saveData();
+  }
+
+  // ---------- render root shell (once) ----------
+  const app = document.getElementById('app');
+  function renderShell(){
+    app.innerHTML = `
+      <header class="top">
+        <div>
+          <div class="eyebrow">Круг · книга новых знакомств</div>
+          <h1>Круг</h1>
+          <div class="tagline">Люди, которых ты встретила, — и напоминание не забыть написать снова.</div>
+        </div>
+        <div class="stats-row" id="stats"></div>
+      </header>
+
+      <div id="nudge"></div>
+
+      <div class="toolbar">
+        <div class="search-wrap">
+          ${ICONS.search}
+          <input id="searchInput" type="text" placeholder="Искать по имени, месту встречи или тегу…" />
+        </div>
+        <button id="addBtn">${ICONS.plus} Добавить человека</button>
+        <button id="exportBtn">${ICONS.download} Экспорт</button>
+      </div>
+
+      <div class="tabs" id="tabs"></div>
+      <div class="grid" id="grid"></div>
+      <div id="modalRoot"></div>
+    `;
+
+    document.getElementById('searchInput').addEventListener('input', e=>{
+      searchQuery = e.target.value.toLowerCase();
+      renderGrid();
+    });
+    document.getElementById('addBtn').addEventListener('click', ()=>{
+      modalState = {type:'add'};
+      renderModal();
+    });
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      modalState = {type:'export'};
+      renderModal();
+    });
+    document.getElementById('tabs').addEventListener('click', e=>{
+      const btn = e.target.closest('.tab-btn');
+      if(!btn) return;
+      filterStage = btn.dataset.stage;
+      renderTabs();
+      renderGrid();
+    });
+    document.getElementById('nudge').addEventListener('click', e=>{
+      const okBtn = e.target.closest('[data-nudge-ok]');
+      if(okBtn){
+        markContactedToday(okBtn.dataset.nudgeOk);
+        renderAll();
+        return;
+      }
+      const refreshBtn = e.target.closest('[data-nsug-refresh]');
+      if(refreshBtn){
+        const p = people.find(x=>x.id===refreshBtn.dataset.nsugRefresh);
+        if(p){ pickSuggestion(p, nudgeSuggestionCache, true); renderNudge(); }
+        return;
+      }
+      const copyBtn = e.target.closest('[data-nsug-copy]');
+      if(copyBtn){
+        const text = nudgeSuggestionCache[copyBtn.dataset.nsugCopy];
+        if(text){
+          navigator.clipboard.writeText(text).then(()=>{
+            copyBtn.classList.add('copied');
+            setTimeout(()=>copyBtn.classList.remove('copied'), 1200);
+          }).catch(()=>{});
+        }
+        return;
+      }
+      const nameEl = e.target.closest('[data-open-profile]');
+      if(nameEl){
+        modalState = {type:'profile', id: nameEl.dataset.openProfile};
+        renderModal();
+      }
+    });
+    document.getElementById('grid').addEventListener('click', e=>{
+      const quick = e.target.closest('[data-quick]');
+      if(quick){
+        e.stopPropagation();
+        markContactedToday(quick.dataset.quick);
+        renderAll();
+        return;
+      }
+      const card = e.target.closest('.card');
+      if(card){
+        modalState = {type:'profile', id: card.dataset.id};
+        renderModal();
+      }
+    });
+  }
+
+  // ---------- stats ----------
+  function renderStats(){
+    const el = document.getElementById('stats');
+    const total = people.length;
+    const friends = people.filter(p=>p.stage==='friend').length;
+    const nudges = people.filter(p=>needsNudge(p)).length;
+    el.innerHTML = `
+      <div class="stat-chip">всего · <b>${total}</b></div>
+      <div class="stat-chip">друзья · <b>${friends}</b></div>
+      <div class="stat-chip">пора написать · <b>${nudges}</b></div>
+    `;
+  }
+
+  // ---------- nudge panel ----------
+  function renderNudge(){
+    const el = document.getElementById('nudge');
+    const items = people
+      .map(p=>({p, n: needsNudge(p)}))
+      .filter(x=>x.n)
+      .sort((a,b)=>b.n.priority - a.n.priority)
+      .slice(0,5);
+
+    if(items.length === 0){
+      el.innerHTML = `
+        <div class="nudge">
+          <div class="nudge-head"><span class="dot"></span><span>Сегодня стоит написать</span></div>
+          <div class="nudge-empty">Пока всё свежо — никого не нужно тормошить. 🌱</div>
+        </div>`;
+      return;
+    }
+    el.innerHTML = `
+      <div class="nudge">
+        <div class="nudge-head"><span class="dot"></span><span>Сегодня стоит написать</span></div>
+        <div class="nudge-sub">Интервалы растут сами: 1.5 нед → 2 нед → 3 нед → раз в месяц — так почти невозможно показаться навязчивой.</div>
+        <div class="nudge-list">
+          ${items.map(({p,n})=>{
+            const suggestion = pickSuggestion(p, nudgeSuggestionCache, false);
+            return `
+            <div class="nudge-item ${n.gentle?'gentle':''}">
+              <div class="who">
+                <b data-open-profile="${p.id}">${escapeHtml(p.name)}</b>
+                <small>${n.reason}</small>
+                ${suggestion ? `
+                  <div class="suggest-row">
+                    <span class="stext">💬 ${escapeHtml(suggestion)}</span>
+                    <button class="icon-mini" data-nsug-refresh="${p.id}" title="Другая идея">${ICONS.refresh}</button>
+                    <button class="icon-mini" data-nsug-copy="${p.id}" title="Скопировать">${ICONS.copy}</button>
+                  </div>
+                ` : ''}
+              </div>
+              <button data-nudge-ok="${p.id}">${ICONS.check} Написала</button>
+            </div>
+          `;}).join('')}
+        </div>
+      </div>`;
+  }
+
+  // ---------- tabs ----------
+  function renderTabs(){
+    const el = document.getElementById('tabs');
+    const countFor = id => id==='all' ? people.length : people.filter(p=>p.stage===id).length;
+    const chips = [{id:'all', label:'Все', hex:'#2A2118'}, ...STAGES];
+    el.innerHTML = chips.map(s=>`
+      <button class="tab-btn ${filterStage===s.id?'active':''}" data-stage="${s.id}" style="--tab-color:${s.hex}">
+        <span class="sw" style="background:${s.hex}"></span>${s.label} (${countFor(s.id)})
+      </button>
+    `).join('');
+  }
+
+  // ---------- grid ----------
+  function renderGrid(){
+    const el = document.getElementById('grid');
+    let list = people;
+    if(filterStage !== 'all') list = list.filter(p=>p.stage===filterStage);
+    if(searchQuery){
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(searchQuery) ||
+        p.whereMet.toLowerCase().includes(searchQuery) ||
+        p.tags.some(t=>t.toLowerCase().includes(searchQuery))
+      );
+    }
+
+    if(people.length === 0){
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="big">Пока пусто</div>
+          <div>Добавь первого человека, которого недавно встретила —<br/>и начни собирать свой круг.</div>
+          <button id="emptyAddBtn">${ICONS.plus} Добавить человека</button>
+        </div>`;
+      document.getElementById('emptyAddBtn').addEventListener('click', ()=>{
+        modalState = {type:'add'}; renderModal();
+      });
+      return;
+    }
+    if(list.length === 0){
+      el.innerHTML = `<div class="empty-state"><div class="big">Никого не нашлось</div><div>Попробуй другой запрос или фильтр.</div></div>`;
+      return;
+    }
+
+    el.innerHTML = list.map(p=>{
+      const stage = stageById(p.stage);
+      const d = daysSince(p.lastContact);
+      const overdue = p.stage !== 'friend' && !!needsNudge(p);
+      const lastText = p.lastContact ? `${d} ${plural(d,'день','дня','дней')} назад` : 'ещё не писала';
+      const lastNote = p.notes[0] ? p.notes[0].text : '';
+      return `
+        <div class="card" data-id="${p.id}">
+          <span class="stage-chip" style="--c:${stage.hex}">${stage.label}</span>
+          <h3>${escapeHtml(p.name)}</h3>
+          ${p.whereMet ? `<div class="where">${escapeHtml(p.whereMet)}</div>` : ''}
+          ${p.tags.length ? `<div class="tags">${p.tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+          ${lastNote ? `<div class="note-preview">${escapeHtml(lastNote)}</div>` : ''}
+          <div class="footer">
+            <span class="last ${overdue?'overdue':''}">${lastText}</span>
+            <button class="quick-btn" data-quick="${p.id}">${ICONS.check} Написала</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ---------- export ----------
+  function buildExportText(){
+    if(people.length === 0) return "Пока нет ни одного контакта.";
+    const lines = [`КРУГ — список контактов (${fmtDate(todayISO())})`, `Всего: ${people.length}`, ""];
+    people.forEach((p, i)=>{
+      const stage = stageById(p.stage);
+      lines.push(`${i+1}. ${p.name} — ${stage.label}`);
+      if(p.whereMet) lines.push(`   Где: ${p.whereMet}`);
+      if(p.contact) lines.push(`   Контакт: ${p.contact}`);
+      if(p.tags.length) lines.push(`   Теги: ${p.tags.join(', ')}`);
+      lines.push(`   Последний контакт: ${p.lastContact ? fmtDate(p.lastContact) : 'ещё не было'}`);
+      if(p.notes.length){
+        lines.push(`   Заметки:`);
+        p.notes.forEach(n=> lines.push(`     - [${fmtDate(n.date)}] ${n.text}`));
+      }
+      lines.push("");
+    });
+    return lines.join("\n");
+  }
+  function csvEscape(v){
+    const s = String(v==null?'':v).replace(/"/g,'""');
+    return `"${s}"`;
+  }
+  function buildExportCSV(){
+    const header = ['Имя','Этап','Где познакомились','Контакт','Теги','Последний контакт','Дата добавления','Заметки'];
+    const rows = people.map(p=>[
+      p.name,
+      stageById(p.stage).label,
+      p.whereMet,
+      p.contact,
+      p.tags.join('; '),
+      p.lastContact ? fmtDate(p.lastContact) : '',
+      fmtDate(p.createdAt),
+      p.notes.map(n=>`[${fmtDate(n.date)}] ${n.text}`).join(' | ')
+    ]);
+    return [header, ...rows].map(r=>r.map(csvEscape).join(',')).join('\r\n');
+  }
+  function openAsFile(filename, content, mime){
+    try{
+      const blob = new Blob([content], {type: mime});
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
+      return !!win;
+    }catch(e){
+      return false;
+    }
+  }
+
+  // ---------- modal ----------
+  function closeModal(){ modalState = null; renderModal(); }
+
+  function renderModal(){
+    const root = document.getElementById('modalRoot');
+    if(!modalState){ root.innerHTML = ''; return; }
+
+    if(modalState.type === 'add'){
+      root.innerHTML = `
+        <div class="modal-overlay" id="overlay">
+          <div class="modal">
+            <button class="modal-close" id="closeX">${ICONS.close}</button>
+            <h2>Новое знакомство</h2>
+            <form id="addForm">
+              <div class="form-group"><label>Имя *</label><input name="name" required placeholder="Как зовут"/></div>
+              <div class="form-group"><label>Где познакомились</label><input name="whereMet" placeholder="Вечеринка у Ани, коворкинг, курсы…"/></div>
+              <div class="form-group"><label>Контакт</label><input name="contact" placeholder="телефон, telegram, instagram…"/></div>
+              <div class="form-group"><label>Теги / интересы</label><input name="tags" placeholder="через запятую: йога, кино, стартапы"/></div>
+              <div class="form-group"><label>Первая заметка (необязательно)</label><textarea name="firstNote" rows="2" placeholder="Что запомнилось при встрече"></textarea></div>
+              <div class="modal-actions">
+                <button type="submit" class="btn-primary">Добавить в круг</button>
+                <button type="button" class="btn-ghost" id="cancelBtn">Отмена</button>
+              </div>
+            </form>
+          </div>
+        </div>`;
+      document.getElementById('closeX').addEventListener('click', closeModal);
+      document.getElementById('cancelBtn').addEventListener('click', closeModal);
+      document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+      document.getElementById('addForm').addEventListener('submit', e=>{
+        e.preventDefault();
+        const f = new FormData(e.target);
+        const name = (f.get('name')||'').trim();
+        if(!name) return;
+        addPerson({
+          name, whereMet: f.get('whereMet')||'', contact: f.get('contact')||'',
+          tags: f.get('tags')||'', firstNote: f.get('firstNote')||''
+        });
+        closeModal();
+        renderAll();
+      });
+      return;
+    }
+
+    if(modalState.type === 'export'){
+      const text = buildExportText();
+      root.innerHTML = `
+        <div class="modal-overlay" id="overlay">
+          <div class="modal">
+            <button class="modal-close" id="closeX">${ICONS.close}</button>
+            <h2>Экспорт контактов</h2>
+            <div class="eyebrow">${people.length} ${plural(people.length,'человек','человека','человек')} в круге</div>
+            <textarea class="export-pre" id="exportTextarea" readonly>${escapeHtml(text)}</textarea>
+            <div class="export-actions">
+              <button type="button" class="btn-primary" id="copyBtn">Скопировать</button>
+              <button type="button" class="btn-ghost" id="downloadTxtBtn">${ICONS.download} Открыть как .txt</button>
+              <button type="button" class="btn-ghost" id="downloadCsvBtn">${ICONS.download} Открыть как .csv</button>
+            </div>
+            <div class="copy-note" id="copyNote"></div>
+            <div class="eyebrow" style="margin-top:14px; line-height:1.5; text-transform:none; letter-spacing:normal; font-size:.74rem;">
+              Если кнопки выше не срабатывают (иногда предпросмотр блокирует скачивание) — нажми «Скопировать» и вставь текст прямо в чат с Claude: он сделает из него настоящий файл, который точно скачается.
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('closeX').addEventListener('click', closeModal);
+      document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+      document.getElementById('copyBtn').addEventListener('click', async ()=>{
+        const note = document.getElementById('copyNote');
+        const ta = document.getElementById('exportTextarea');
+        try{
+          await navigator.clipboard.writeText(text);
+          note.textContent = 'Скопировано ✓ — можно вставить (Ctrl/Cmd+V) куда угодно.';
+        }catch(e){
+          ta.focus(); ta.select();
+          note.textContent = 'Не удалось скопировать автоматически — текст выделен, нажми Ctrl+C / Cmd+C.';
+        }
+      });
+      document.getElementById('downloadTxtBtn').addEventListener('click', ()=>{
+        const note = document.getElementById('copyNote');
+        const ok = openAsFile('krug-contacts.txt', text, 'text/plain;charset=utf-8');
+        note.textContent = ok
+          ? 'Открыла в новой вкладке — сохрани через Ctrl/Cmd+S, если нужен файл.'
+          : 'Вкладку открыть не удалось (заблокирована предпросмотром) — используй «Скопировать».';
+      });
+      document.getElementById('downloadCsvBtn').addEventListener('click', ()=>{
+        const note = document.getElementById('copyNote');
+        const ok = openAsFile('krug-contacts.csv', '\uFEFF' + buildExportCSV(), 'text/csv;charset=utf-8');
+        note.textContent = ok
+          ? 'Открыла в новой вкладке — сохрани через Ctrl/Cmd+S, если нужен файл.'
+          : 'Вкладку открыть не удалось (заблокирована предпросмотром) — используй «Скопировать».';
+      });
+      return;
+    }
+
+    if(modalState.type === 'profile'){
+      const p = people.find(x=>x.id===modalState.id);
+      if(!p){ closeModal(); return; }
+      const stage = stageById(p.stage);
+      const confirmingDelete = modalState.confirmDelete;
+      const cadence = getCadenceInfo(p);
+      root.innerHTML = `
+        <div class="modal-overlay" id="overlay">
+          <div class="modal">
+            <button class="modal-close" id="closeX">${ICONS.close}</button>
+            <h2>${escapeHtml(p.name)}</h2>
+            <div class="eyebrow">в круге с ${fmtDate(p.createdAt)} · последний контакт: ${p.lastContact?fmtDate(p.lastContact):'ещё не было'}</div>
+
+            <div class="cadence-box">
+              ${p.stage === 'friend'
+                ? `Вы уже друзья — <b>напоминание раз в ~30 дней</b>, просто чтобы не потеряться.`
+                : `Следующее напоминание — <b>${fmtDate(cadence.nextDate.toISOString())}</b> (на этапе «${stage.label}» обычно пишут раз в ~${cadence.days} дн.)`
+              }
+            </div>
+
+            <div class="suggest-head">
+              <div class="eyebrow" style="margin:0;">Идеи, что написать</div>
+              <button type="button" id="refreshSuggestBtn">${ICONS.refresh} Ещё идеи</button>
+            </div>
+            <div class="suggest-panel" id="suggestPanel"></div>
+
+            <hr class="split"/>
+            <form id="editForm">
+              <div class="field-row">
+                <div class="form-group"><label>Имя</label><input name="name" value="${escapeHtml(p.name)}" required/></div>
+                <div class="form-group"><label>Где познакомились</label><input name="whereMet" value="${escapeHtml(p.whereMet)}"/></div>
+              </div>
+              <div class="field-row">
+                <div class="form-group"><label>Контакт</label><input name="contact" value="${escapeHtml(p.contact)}"/></div>
+                <div class="form-group"><label>Теги</label><input name="tags" value="${escapeHtml(p.tags.join(', '))}"/></div>
+              </div>
+              <div class="form-group">
+                <label>Этап знакомства</label>
+                <div class="stage-picker">
+                  ${STAGES.map(s=>`<button type="button" class="stage-opt ${s.id===p.stage?'sel':''}" data-stage-pick="${s.id}" style="--c:${s.hex}">${s.label}</button>`).join('')}
+                </div>
+              </div>
+              <div class="modal-actions">
+                <button type="submit" class="btn-primary">Сохранить</button>
+                <button type="button" class="btn-ghost" id="closeBtn">Закрыть</button>
+              </div>
+            </form>
+
+            <hr class="split"/>
+            <div class="notes-head"><div class="eyebrow">Заметки и переписка</div></div>
+            <div class="add-note-row">
+              <textarea id="noteText" rows="2" placeholder="О чём говорили, что вспомнить в следующий раз…"></textarea>
+              <label class="checkbox-row"><input type="checkbox" id="countsContact" checked/> это было общение — обновить «последний контакт»</label>
+              <div><button type="button" class="btn-ghost" id="addNoteBtn" style="border-color:var(--stage-chat); color:var(--stage-chat);">Добавить заметку</button></div>
+            </div>
+            <div class="timeline" id="timeline"></div>
+
+            <hr class="split"/>
+            ${confirmingDelete ? `
+              <div class="confirm-row">
+                <span>Удалить этого человека насовсем?</span>
+                <button class="yes" id="confirmDeleteYes">Да, удалить</button>
+                <button id="confirmDeleteNo">Отмена</button>
+              </div>
+            ` : `<button class="btn-danger-text" id="deleteBtn">Удалить контакт</button>`}
+          </div>
+        </div>`;
+
+      renderTimeline(p);
+      renderSuggestPanel(p);
+
+      document.getElementById('closeX').addEventListener('click', closeModal);
+      document.getElementById('closeBtn').addEventListener('click', closeModal);
+      document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+
+      document.getElementById('refreshSuggestBtn').addEventListener('click', ()=>{
+        pickSuggestions(p, 2, profileSuggestionCache, true);
+        renderSuggestPanel(p);
+      });
+      document.getElementById('suggestPanel').addEventListener('click', e=>{
+        const btn = e.target.closest('[data-psug-copy]');
+        if(!btn) return;
+        const text = btn.dataset.psugCopy;
+        navigator.clipboard.writeText(text).then(()=>{
+          btn.classList.add('copied');
+          setTimeout(()=>btn.classList.remove('copied'), 1200);
+        }).catch(()=>{});
+      });
+
+      root.querySelectorAll('[data-stage-pick]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          updatePerson(p.id, {stage: btn.dataset.stagePick});
+          delete nudgeSuggestionCache[p.id];
+          delete profileSuggestionCache[p.id];
+          modalState = {type:'profile', id:p.id};
+          renderModal();
+          renderAll();
+        });
+      });
+
+      document.getElementById('editForm').addEventListener('submit', e=>{
+        e.preventDefault();
+        const f = new FormData(e.target);
+        const name = (f.get('name')||'').trim();
+        if(!name) return;
+        updatePerson(p.id, {
+          name, whereMet: f.get('whereMet')||'', contact: f.get('contact')||'',
+          tags: parseTags(f.get('tags')||'')
+        });
+        closeModal();
+        renderAll();
+      });
+
+      document.getElementById('addNoteBtn').addEventListener('click', ()=>{
+        const text = document.getElementById('noteText').value;
+        if(!text.trim()) return;
+        const counts = document.getElementById('countsContact').checked;
+        addNote(p.id, text, counts);
+        modalState = {type:'profile', id:p.id};
+        renderModal();
+        renderAll();
+      });
+
+      if(!confirmingDelete){
+        document.getElementById('deleteBtn').addEventListener('click', ()=>{
+          modalState = {type:'profile', id:p.id, confirmDelete:true};
+          renderModal();
+        });
+      } else {
+        document.getElementById('confirmDeleteNo').addEventListener('click', ()=>{
+          modalState = {type:'profile', id:p.id};
+          renderModal();
+        });
+        document.getElementById('confirmDeleteYes').addEventListener('click', ()=>{
+          deletePerson(p.id);
+          closeModal();
+          renderAll();
+        });
+      }
+    }
+  }
+
+  function renderTimeline(p){
+    const el = document.getElementById('timeline');
+    if(!el) return;
+    if(!p.notes.length){
+      el.innerHTML = `<div class="timeline-empty">Заметок пока нет</div>`;
+      return;
+    }
+    el.innerHTML = p.notes.map(n=>`
+      <div class="timeline-item">
+        <div class="tdate">${fmtDate(n.date)}</div>
+        <div class="ttext">${escapeHtml(n.text)}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderSuggestPanel(p){
+    const el = document.getElementById('suggestPanel');
+    if(!el) return;
+    const list = pickSuggestions(p, 2, profileSuggestionCache, false);
+    if(!list.length){
+      el.innerHTML = `<div class="timeline-empty">Добавь теги или место встречи — и здесь появятся персональные идеи.</div>`;
+      return;
+    }
+    el.innerHTML = list.map(s=>`
+      <div class="suggest-card">
+        <span class="stext">${escapeHtml(s)}</span>
+        <button class="icon-mini" data-psug-copy="${escapeHtml(s)}" title="Скопировать">${ICONS.copy}</button>
+      </div>
+    `).join('');
+  }
+
+  // ---------- top-level render ----------
+  function renderAll(){
+    renderStats();
+    renderNudge();
+    renderTabs();
+    renderGrid();
+  }
+
+  async function init(){
+    renderShell.__pending = true;
+    await loadData();
+    renderShell();
+    renderAll();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
