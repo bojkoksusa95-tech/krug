@@ -5,10 +5,16 @@
     "whereMet": "моя сестра",
     "contact": "@valery_bula",
     "tags": [],
-    "stage": "new",
-    "notes": [],
+    "stage": "chat",
+    "notes": [
+      {
+        "id": "p_mtcxy0iq5av0dy",
+        "date": "2026-08-28T12:41:46.274Z",
+        "text": "Отметка: написала / вышли на связь"
+      }
+    ],
     "createdAt": "2026-08-28T12:41:44.662Z",
-    "lastContact": null,
-    "contactCount": 0
+    "lastContact": "2026-08-28T12:41:46.274Z",
+    "contactCount": 1
   }
 ]
