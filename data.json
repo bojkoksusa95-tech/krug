@@ -1,5 +1,17 @@
 [
   {
+    "id": "p_mtcy496agadii1",
+    "name": "ZZZ_ДИАГНОСТИКА_УДАЛИТЬ",
+    "whereMet": "",
+    "contact": "",
+    "tags": [],
+    "stage": "new",
+    "notes": [],
+    "createdAt": "2026-08-28T12:46:37.426Z",
+    "lastContact": null,
+    "contactCount": 0
+  },
+  {
     "id": "p_mtcxylx26b0092",
     "name": "Люба",
     "whereMet": "с айтишки",
