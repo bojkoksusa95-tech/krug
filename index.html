@@ -145,6 +145,24 @@
     border-radius:999px; padding:11px 16px; font-weight:600; font-size:.85rem;
   }
   #exportBtn:hover{ background:var(--line-soft); }
+  #settingsBtn{
+    display:flex; align-items:center; justify-content:center;
+    background:var(--paper-card); color:var(--ink-soft); border:1px solid var(--line);
+    border-radius:999px; width:40px; height:40px; flex:none;
+  }
+  #settingsBtn:hover{ background:var(--line-soft); color:var(--ink); }
+  .sync-status{
+    display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px;
+    font-size:.83rem; line-height:1.4; margin:12px 0;
+  }
+  .sync-status.ok{ background:rgba(63,138,122,.12); color:var(--stage-chat); }
+  .sync-status.err{ background:rgba(179,63,50,.1); color:var(--stage-friend); }
+  .sync-status.none{ background:var(--line-soft); color:var(--ink-soft); }
+  .token-row{ display:flex; gap:8px; margin:10px 0; }
+  .token-row input{
+    flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--paper-card); color:var(--ink); font-size:.85rem; font-family:monospace;
+  }
   .export-pre{
     width:100%; max-height:320px; overflow-y:auto; background:#fff; border:1px solid var(--line);
     border-radius:var(--radius-sm); padding:14px; font-family:'IBM Plex Mono',monospace; font-size:.78rem;
@@ -273,6 +291,84 @@
 
   const STORAGE_KEY = "krug-contacts-v1";
   const hasClaudeStorage = (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+  // ---------- shared storage via GitHub (works when hosted as a plain website) ----------
+  // Reading data.json from raw.githubusercontent.com needs no setup and works on any device.
+  // Writing to it needs a personal access token (kept only in this browser's localStorage,
+  // never in the page source) — see the settings (gear) modal.
+  const GH_OWNER = "bojkoksusa95-tech";
+  const GH_REPO = "krug";
+  const GH_DATA_PATH = "data.json";
+  const GH_TOKEN_KEY = "krug-gh-token";
+  const GH_RAW_URL = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/${GH_DATA_PATH}`;
+  const GH_API_URL = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_DATA_PATH}`;
+  let lastSyncStatus = null; // {ok:true, at:Date} | {ok:false, message:string} | null (never tried)
+
+  function getGhToken(){
+    try{ return localStorage.getItem(GH_TOKEN_KEY) || ""; }catch(e){ return ""; }
+  }
+  function setGhToken(token){
+    try{
+      if(token) localStorage.setItem(GH_TOKEN_KEY, token);
+      else localStorage.removeItem(GH_TOKEN_KEY);
+    }catch(e){}
+  }
+  function utf8ToBase64(str){
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  async function fetchRemoteData(){
+    // cache-bust: raw.githubusercontent.com caches for a few minutes otherwise
+    const res = await fetch(`${GH_RAW_URL}?_=${Date.now()}`, { cache: "no-store" });
+    if(res.status === 404) return []; // data.json doesn't exist yet — treat as empty
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    if(!text.trim()) return [];
+    return JSON.parse(text);
+  }
+  async function pushRemoteData(peopleArray, attempt){
+    const token = getGhToken();
+    if(!token) return; // no token on this device — stays local-only
+    attempt = attempt || 0;
+    try{
+      // need the current sha to update the file
+      let sha;
+      const getRes = await fetch(GH_API_URL, {
+        headers: { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" }
+      });
+      if(getRes.ok){
+        const meta = await getRes.json();
+        sha = meta.sha;
+      } else if(getRes.status !== 404){
+        throw new Error("HTTP " + getRes.status + " (чтение)");
+      }
+      const body = {
+        message: "Обновление данных из приложения Круг",
+        content: utf8ToBase64(JSON.stringify(peopleArray, null, 2)),
+      };
+      if(sha) body.sha = sha;
+      const putRes = await fetch(GH_API_URL, {
+        method: "PUT",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+      if(putRes.status === 409 && attempt < 2){
+        // someone else wrote in the meantime — retry with fresh sha
+        return pushRemoteData(peopleArray, attempt + 1);
+      }
+      if(!putRes.ok){
+        const errBody = await putRes.text().catch(()=> "");
+        throw new Error("HTTP " + putRes.status + " (запись) " + errBody.slice(0,200));
+      }
+      lastSyncStatus = { ok:true, at: new Date() };
+    }catch(e){
+      lastSyncStatus = { ok:false, message: String(e && e.message || e) };
+      console.error("Не удалось синхронизировать с GitHub", e);
+    }
+  }
   const STAGES = [
     { id:"new",    label:"Новое знакомство",  color:"var(--stage-new)",    hex:"#5B7C99" },
     { id:"chat",   label:"Переписываемся",    color:"var(--stage-chat)",   hex:"#3F8A7A" },
@@ -288,7 +384,8 @@
     check: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
     download: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
     refresh: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>`,
-    copy: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
+    copy: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+    gear: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`
   };
 
   // Cadence: how many days to wait before nudging again, by stage — designed to feel present
@@ -375,11 +472,24 @@
         people = [];
       }
     } else {
+      let loadedFromRemote = false;
       try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        people = raw ? JSON.parse(raw) : [];
+        const remote = await fetchRemoteData();
+        people = Array.isArray(remote) ? remote : [];
+        loadedFromRemote = true;
+        lastSyncStatus = { ok:true, at: new Date() };
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(people)); }catch(e){}
       }catch(e){
-        people = [];
+        lastSyncStatus = { ok:false, message: String(e && e.message || e) };
+        console.error("Не удалось загрузить общие данные с GitHub, использую локальные", e);
+      }
+      if(!loadedFromRemote){
+        try{
+          const raw = localStorage.getItem(STORAGE_KEY);
+          people = raw ? JSON.parse(raw) : [];
+        }catch(e){
+          people = [];
+        }
       }
     }
     dataReady = true;
@@ -401,6 +511,7 @@
       }catch(e){
         console.error("Не удалось сохранить данные", e);
       }
+      pushRemoteData(people); // fire-and-forget; no-op if no token saved on this device
     }
   }
 
@@ -531,6 +642,7 @@
         </div>
         <button id="addBtn">${ICONS.plus} Добавить человека</button>
         <button id="exportBtn">${ICONS.download} Экспорт</button>
+        <button id="settingsBtn" title="Синхронизация между устройствами">${ICONS.gear}</button>
       </div>
 
       <div class="tabs" id="tabs"></div>
@@ -548,6 +660,10 @@
     });
     document.getElementById('exportBtn').addEventListener('click', ()=>{
       modalState = {type:'export'};
+      renderModal();
+    });
+    document.getElementById('settingsBtn').addEventListener('click', ()=>{
+      modalState = {type:'settings'};
       renderModal();
     });
     document.getElementById('tabs').addEventListener('click', e=>{
@@ -863,6 +979,74 @@
           ? 'Открыла в новой вкладке — сохрани через Ctrl/Cmd+S, если нужен файл.'
           : 'Вкладку открыть не удалось (заблокирована предпросмотром) — используй «Скопировать».';
       });
+      return;
+    }
+
+    if(modalState.type === 'settings'){
+      const token = getGhToken();
+      const hasToken = !!token;
+      const maskedToken = hasToken ? token.slice(0,11) + '…' + token.slice(-4) : '';
+      let statusHtml;
+      if(!lastSyncStatus){
+        statusHtml = `<div class="sync-status none">Ещё не синхронировалось в этом сеансе.</div>`;
+      } else if(lastSyncStatus.ok){
+        const t = lastSyncStatus.at.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+        statusHtml = `<div class="sync-status ok">${ICONS.check} Синхронизировано в ${t}</div>`;
+      } else {
+        statusHtml = `<div class="sync-status err">Не удалось синхронизироваться: ${escapeHtml(lastSyncStatus.message)}</div>`;
+      }
+      root.innerHTML = `
+        <div class="modal-overlay" id="overlay">
+          <div class="modal">
+            <button class="modal-close" id="closeX">${ICONS.close}</button>
+            <h2>Синхронизация между устройствами</h2>
+            <div class="eyebrow" style="margin-top:-4px;">Данные хранятся в репозитории на GitHub</div>
+            ${statusHtml}
+            <div class="eyebrow" style="margin-top:14px; line-height:1.5; text-transform:none; letter-spacing:normal; font-size:.8rem;">
+              Чтение работает на любом устройстве без настройки. Чтобы контакты, добавленные здесь, тоже сохранялись в общее хранилище (и появлялись на других устройствах), вставь сюда ключ доступа — его нужно вставить один раз на каждом новом устройстве/браузере.
+            </div>
+            ${hasToken ? `
+              <div class="token-row">
+                <input type="text" value="${escapeHtml(maskedToken)}" readonly />
+              </div>
+              <div class="export-actions">
+                <button type="button" class="btn-ghost" id="syncNowBtn">${ICONS.refresh} Синхронизировать сейчас</button>
+                <button type="button" class="btn-ghost" id="removeTokenBtn">Убрать ключ с этого устройства</button>
+              </div>
+            ` : `
+              <div class="token-row">
+                <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off" />
+                <button type="button" class="btn-primary" id="saveTokenBtn">Сохранить</button>
+              </div>
+            `}
+            <div class="copy-note" id="settingsNote"></div>
+          </div>
+        </div>`;
+      document.getElementById('closeX').addEventListener('click', closeModal);
+      document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+      if(hasToken){
+        document.getElementById('syncNowBtn').addEventListener('click', async ()=>{
+          const note = document.getElementById('settingsNote');
+          note.textContent = 'Синхронизирую…';
+          await pushRemoteData(people);
+          renderModal();
+        });
+        document.getElementById('removeTokenBtn').addEventListener('click', ()=>{
+          setGhToken('');
+          renderModal();
+        });
+      } else {
+        document.getElementById('saveTokenBtn').addEventListener('click', async ()=>{
+          const input = document.getElementById('tokenInput');
+          const val = input.value.trim();
+          const note = document.getElementById('settingsNote');
+          if(!val){ note.textContent = 'Вставь ключ доступа в поле выше.'; return; }
+          setGhToken(val);
+          note.textContent = 'Сохраняю и проверяю…';
+          await pushRemoteData(people);
+          renderModal();
+        });
+      }
       return;
     }
 
